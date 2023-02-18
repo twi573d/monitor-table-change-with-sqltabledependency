@@ -33,6 +33,11 @@ namespace TableDependency.SqlClient.Enumerations
         SqlServer2005 = 2005,
         SqlServer2008 = 2008,
         SqlServer2012 = 2012,
+        SqlServer2014 = 2014,
+        SqlServer2016 = 2016,
+        SqlServer2017 = 2017,
+        SqlServer2019 = 2019,
+        SqlServer2022 = 2022,
         SqlServerLatest = int.MaxValue
     }
 }

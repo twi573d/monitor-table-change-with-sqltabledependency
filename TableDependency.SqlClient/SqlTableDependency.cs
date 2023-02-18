@@ -274,10 +274,28 @@ namespace TableDependency.SqlClient
                 var versionNumber = int.Parse(serverVersionDetails[0]);
 
                 if (versionNumber < 8) return SqlServerVersion.Unknown;
-                if (versionNumber == 8) return SqlServerVersion.SqlServer2000;
-                if (versionNumber == 9) return SqlServerVersion.SqlServer2005;
-                if (versionNumber == 10) return SqlServerVersion.SqlServer2008;
-                if (versionNumber == 11) return SqlServerVersion.SqlServer2012;
+
+                switch (versionNumber)
+                {
+                    case 8:
+                        return SqlServerVersion.SqlServer2000;
+                    case 9:
+                        return SqlServerVersion.SqlServer2005;
+                    case 10:
+                        return SqlServerVersion.SqlServer2008;
+                    case 11:
+                        return SqlServerVersion.SqlServer2012;
+                    case 12:
+                        return SqlServerVersion.SqlServer2014;
+                    case 13:
+                        return SqlServerVersion.SqlServer2016;
+                    case 14:
+                        return SqlServerVersion.SqlServer2017;
+                    case 15:
+                        return SqlServerVersion.SqlServer2019;
+                    case 16:
+                        return SqlServerVersion.SqlServer2022;
+                }
             }
             catch
             {
@@ -402,7 +420,7 @@ namespace TableDependency.SqlClient
             this.CheckIfServiceBrokerIsEnabled();
 
             var sqlVersion = this.GetSqlServerVersion();
-            if (sqlVersion < SqlServerVersion.SqlServer2008) throw new SqlServerVersionNotSupportedException(sqlVersion);
+            if (sqlVersion < SqlServerVersion.SqlServer2012) throw new SqlServerVersionNotSupportedException(sqlVersion);
         }
 
         protected virtual string CreateWhereCondition(bool prependSpace = false)
