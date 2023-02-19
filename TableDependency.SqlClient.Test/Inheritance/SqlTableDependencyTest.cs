@@ -176,8 +176,8 @@ namespace TableDependency.SqlClient.Test.Inheritance
                         if (index > 0) return this.Spacer(8) + string.Format("IF EXISTS (SELECT * FROM sys.service_message_types WITH (NOLOCK) WHERE name = N'{0}') DROP MESSAGE TYPE [{0}];", pm);
                         return string.Format("IF EXISTS (SELECT * FROM sys.service_message_types WITH (NOLOCK) WHERE name = N'{0}') DROP MESSAGE TYPE [{0}];", pm);
                     }));
-
-                    var dropAllScript = this.PrepareScriptDropAll(dropMessages);
+                    
+                    var dropAllScript = this.PrepareScriptDropAll(dropMessages, false);
                     sqlCommand.CommandText = this.PrepareScriptProcedureQueueActivation(dropAllScript);
                     sqlCommand.ExecuteNonQuery();
                     this.WriteTraceMessage(TraceLevel.Verbose, $"Procedure {_dataBaseObjectsNamingConvention} created.");

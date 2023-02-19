@@ -171,15 +171,13 @@ namespace TableDependency.SqlClient
             _processableMessages = this.CreateDatabaseObjects(timeOut, watchDogTimeOut);
             _cancellationTokenSource = new CancellationTokenSource();
 
-            _task = Task.Factory.StartNew(() =>
-                WaitForNotifications(
+            _task = WaitForNotifications(
                     _cancellationTokenSource.Token,
                     onChangedSubscribedList,
                     onErrorSubscribedList,
                     onStatusChangedSubscribedList,
                     timeOut,
-                    watchDogTimeOut),
-                _cancellationTokenSource.Token);
+                    watchDogTimeOut);
 
             this.WriteTraceMessage(TraceLevel.Info, $"Waiting for receiving {_tableName}'s records change notifications.");
         }
@@ -192,7 +190,7 @@ namespace TableDependency.SqlClient
             if (_task != null)
             {
                 _cancellationTokenSource.Cancel(true);
-                _task?.Wait();
+                _task.Wait();
             }
 
             _task = null;            
@@ -400,7 +398,7 @@ namespace TableDependency.SqlClient
                             return string.Format("IF EXISTS (SELECT * FROM sys.service_message_types WITH (NOLOCK) WHERE name = N'{0}') DROP MESSAGE TYPE [{0}];", pm);
                         }));
 
-                        var dropAllScript = this.PrepareScriptDropAll(dropMessages);
+                        var dropAllScript = this.PrepareScriptDropAll(dropMessages, false);
 
                         sqlCommand.Transaction = sqlTransaction;
                         sqlCommand.CommandType = CommandType.Text;
@@ -543,7 +541,8 @@ namespace TableDependency.SqlClient
                         return string.Format("IF EXISTS (SELECT * FROM sys.service_message_types WITH (NOLOCK) WHERE name = N'{0}') DROP MESSAGE TYPE [{0}];", pm); 
                     }));
 
-                    var dropAllScript = this.PrepareScriptDropAll(dropMessages);
+                    var dropAllScript = this.PrepareScriptDropAll(dropMessages, false);
+                    var dropAllScriptTrigger = this.PrepareScriptDropAll(dropMessages, true);
                     sqlCommand.CommandText = this.PrepareScriptProcedureQueueActivation(dropAllScript);
                     sqlCommand.ExecuteNonQuery();
                     this.WriteTraceMessage(TraceLevel.Verbose, $"Procedure {_dataBaseObjectsNamingConvention} created.");
@@ -581,7 +580,7 @@ namespace TableDependency.SqlClient
                         columnsForExceptTable,
                         columnsForDeletedTable,
                         this.ConversationHandle,
-                        dropAllScript);
+                        dropAllScriptTrigger);
 
                     sqlCommand.ExecuteNonQuery();
                     this.WriteTraceMessage(TraceLevel.Verbose, $"Trigger {_dataBaseObjectsNamingConvention} created.");
@@ -632,9 +631,18 @@ namespace TableDependency.SqlClient
             return this.ActivateDatabaseLogging ? script : this.RemoveLogOperations(script);
         }
 
-        protected virtual string PrepareScriptDropAll(string dropMessages)
+        protected virtual string PrepareScriptDropAll(string dropMessages, bool dropFromTrigger)
         {
-            var script = string.Format(SqlScripts.ScriptDropAll, _dataBaseObjectsNamingConvention, dropMessages, _schemaName);
+            string sDropProc = "", sDropTrig = "";
+            if (dropFromTrigger)
+            {
+                sDropTrig = string.Format("DISABLE TRIGGER [{2}].[tr_{0}_Sender] ON [{2}].[{3}];DROP TRIGGER [{2}].[tr_{0}_Sender];", _dataBaseObjectsNamingConvention, dropMessages, _schemaName, _tableName);
+            }
+            else
+            {
+                sDropProc = string.Format("DISABLE TRIGGER [{2}].[tr_{0}_Sender] ON [{2}].[{3}];DROP TRIGGER [{2}].[tr_{0}_Sender];", _dataBaseObjectsNamingConvention, dropMessages, _schemaName, _tableName);
+            }
+            var script = string.Format(SqlScripts.ScriptDropAll, _dataBaseObjectsNamingConvention, dropMessages, _schemaName, sDropProc, sDropTrig);
             return this.ActivateDatabaseLogging ? script : this.RemoveLogOperations(script);
         }
 
